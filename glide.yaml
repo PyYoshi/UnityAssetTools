@@ -1,0 +1,8 @@
+package: github.com/PyYoshi/UnityAssets
+import:
+- package: github.com/k0kubun/pp
+  version: ^2.1.0
+- package: golang.org/x/text
+  subpackages:
+  - transform
+- package: github.com/jmoiron/golz4

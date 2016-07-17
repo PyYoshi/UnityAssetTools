@@ -1,0 +1,20 @@
+hash: 537b847515cbd071798ee4181b57bce5d4e6fd5c75c04166d1ac45937f82c6b3
+updated: 2016-07-15T21:47:49.372432194+09:00
+imports:
+- name: github.com/jmoiron/golz4
+  version: 27f83594ae3e85936dd5c444ddd615632abbbbfb
+- name: github.com/k0kubun/pp
+  version: fa6ef2628b80777cf9af03bff7ad351a12b774c4
+- name: github.com/mattn/go-colorable
+  version: 9056b7a9f2d1f2d96498d6d146acd1f9d5ed3d59
+- name: github.com/mattn/go-isatty
+  version: 56b76bdf51f7708750eac80fa38b952bb9f32639
+- name: golang.org/x/sys
+  version: b518c298ac9dc94b6ac0757394f50d10c5dfa25a
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: d5d7737684e596dbabf914ecf946d2783f35bdc2
+  subpackages:
+  - transform
+testImports: []
