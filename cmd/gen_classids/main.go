@@ -53,7 +53,7 @@ func main() {
 	g.Println("const (")
 	g.Println("Null ClassID = 0")
 	for _, record := range records {
-		g.Printf("%s = %s\n", record[1], record[0])
+		g.Printf("%s ClassID = %s\n", record[1], record[0])
 	}
 	g.Println(")")
 	g.Println("")
