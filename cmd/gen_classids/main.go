@@ -65,7 +65,7 @@ func main() {
 		g.Printf("return \"%s\"\n", record[1])
 	}
 	g.Println("default:")
-	g.Println("panic(fmt.Errorf(\"UnExpected ClassID: %d\", c))")
+	g.Println("panic(fmt.Errorf(\"Unexpected ClassID: %d\", c))")
 	g.Println("}")
 	g.Println("}")
 

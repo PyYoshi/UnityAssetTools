@@ -716,6 +716,6 @@ func (c ClassID) String() string {
 	case 1120:
 		return "LightmapSnapshot"
 	default:
-		panic(fmt.Errorf("UnExpected ClassID: %d", c))
+		panic(fmt.Errorf("Unexpected ClassID: %d", c))
 	}
 }
