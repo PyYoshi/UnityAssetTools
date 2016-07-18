@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io/ioutil"
+	"os"
 )
 
 // DataReader Unityファイル用バイナリリーダー
@@ -173,4 +174,17 @@ func (data *DataReader) Seek(offset int64, whence int) (int64, error) {
 // Len Return the current stream position.
 func (data *DataReader) Len() int {
 	return data.buffer.Len()
+}
+
+func (data *DataReader) Align() error {
+	size := len(*data.raw)
+	oldPos := size - data.buffer.Len()
+	newPos := (oldPos + 3) & -4
+	if newPos > oldPos {
+		_, err := data.buffer.Seek(int64(newPos), os.SEEK_CUR)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
