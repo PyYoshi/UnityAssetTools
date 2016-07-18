@@ -3,7 +3,11 @@ package unity
 // "errors"
 import (
 	"io/ioutil"
+	"os"
+	"path"
 	"strings"
+
+	"github.com/k0kubun/pp"
 )
 
 const (
@@ -69,7 +73,7 @@ type FSNode struct {
 }
 
 func parseBundle533(dataReader *DataReader, assetBundle *AssetBundle) error {
-	panic("TBD: parseBundle533 func")
+	panic(ErrNotImplemented)
 }
 
 func parseBundle534(dataReader *DataReader, assetBundle *AssetBundle) error {
@@ -80,7 +84,7 @@ func parseBundle534(dataReader *DataReader, assetBundle *AssetBundle) error {
 	if assetBundle.CompressionType == CompressionTypeNone {
 		blockPos := assetBundle.FileSize - int64(assetBundle.CiBlockSize)
 
-		_, err := dataReader.Seek(blockPos, 0)
+		_, err := dataReader.Seek(blockPos, os.SEEK_SET)
 		if err != nil {
 			return err
 		}
@@ -255,5 +259,220 @@ func ParseBundle(path string) (*AssetBundle, error) {
 		return &assetBundle, nil
 	}
 
-	return nil, ErrInvalidAssetBundleType
+	panic(ErrNotImplemented)
+}
+
+func (b *AssetBundle) ExportAssets(dir string) error {
+	nodePos := int64(b.NodeStartAt)
+
+	for _, node := range b.Nodes {
+		startAt := nodePos + node.Offset
+		endAt := startAt + node.Size
+		data := b.Binary[startAt:endAt]
+
+		if b.Signature == SignatureUnityFS {
+			if !strings.HasSuffix(".resource", node.Name) {
+				assetDataReader, err := NewDataReader(data)
+				if err != nil {
+					return err
+				}
+
+				metadataSize, err := assetDataReader.ReadUint(false)
+				if err != nil {
+					return err
+				}
+				pp.Println("metadataSize", metadataSize)
+
+				fileSize, err := assetDataReader.ReadUint(false)
+				if err != nil {
+					return err
+				}
+				pp.Println("fileSize", fileSize)
+
+				format, err := assetDataReader.ReadUint(false)
+				if err != nil {
+					return err
+				}
+				pp.Println("format", format)
+
+				dataOffset, err := assetDataReader.ReadUint(false)
+				if err != nil {
+					return err
+				}
+				pp.Println("dataOffset", dataOffset)
+
+				isLittleEndian := false
+				if format >= 9 {
+					endianness, err := assetDataReader.ReadUint(false)
+					if err != nil {
+						return err
+					}
+					pp.Println("endianness", endianness)
+
+					if endianness == 0 {
+						isLittleEndian = true
+					}
+				}
+				pp.Println("isLittleEndian", isLittleEndian)
+
+				// self.tree = TypeMetadata(self)
+				// self.tree.load(buf)
+				typeMetadata, err := ParseTypeMetadata(assetDataReader, format, isLittleEndian)
+				if err != nil {
+					return err
+				}
+
+				isLongObjectIDs := false
+				if format >= 7 && format <= 13 {
+					longObjectIDsFlag, err := assetDataReader.ReadUint(isLittleEndian)
+					if err != nil {
+						return err
+					}
+					pp.Println("longObjectIDsFlag", longObjectIDsFlag)
+
+					if longObjectIDsFlag > 0 {
+						isLongObjectIDs = true
+					}
+				}
+				pp.Println("isLongObjectIDs", isLongObjectIDs)
+
+				numObjects, err := assetDataReader.ReadUint(isLittleEndian)
+				if err != nil {
+					return err
+				}
+				pp.Println("numObjects", numObjects)
+
+				for i := 0; i < int(numObjects); i++ {
+					if format >= 14 {
+						err = assetDataReader.Align()
+						if err != nil {
+							return err
+						}
+					}
+					obj := ObjectInfo{}
+
+					var pathID int64
+					if isLongObjectIDs {
+						pathID, err = assetDataReader.ReadLong(isLittleEndian)
+						if err != nil {
+							return err
+						}
+					} else {
+						if format >= 14 {
+							pathID, err = assetDataReader.ReadLong(isLittleEndian)
+							if err != nil {
+								return err
+							}
+						} else {
+							pathID32, err := assetDataReader.ReadInt(isLittleEndian)
+							if err != nil {
+								return err
+							}
+							pathID = int64(pathID32)
+						}
+					}
+					obj.PathID = pathID
+
+					objDataOffset, err := assetDataReader.ReadUint(isLittleEndian)
+					if err != nil {
+						return err
+					}
+					obj.DataOffset = objDataOffset
+
+					objSize, err := assetDataReader.ReadUint(isLittleEndian)
+					if err != nil {
+						return err
+					}
+					obj.Size = objSize
+
+					objTypeID, err := assetDataReader.ReadInt(isLittleEndian)
+					if err != nil {
+						return err
+					}
+					obj.TypeID = objTypeID
+
+					objClassID, err := assetDataReader.ReadShort(isLittleEndian)
+					if err != nil {
+						return err
+					}
+					obj.ClassID = ClassID(objClassID)
+
+					if format <= 10 {
+						_, err = assetDataReader.ReadShort(isLittleEndian)
+						if err != nil {
+							return err
+						}
+					} else if format >= 11 {
+						_, err = assetDataReader.ReadShort(isLittleEndian)
+						if err != nil {
+							return err
+						}
+						if format >= 15 {
+							_, err = assetDataReader.ReadChar(isLittleEndian)
+							if err != nil {
+								return err
+							}
+						}
+					}
+
+					// obj = ObjectInfo(self)
+					// obj.load(buf)
+					// self.register_object(obj)
+				}
+
+				if format >= 11 {
+					numAdds, err := assetDataReader.ReadUint(isLittleEndian)
+					if err != nil {
+						return err
+					}
+
+					for i := 0; i < int(numAdds); i++ {
+						if format >= 14 {
+							err = assetDataReader.Align()
+							if err != nil {
+								return err
+							}
+						}
+
+						addID, err := assetDataReader.ReadLong(isLittleEndian)
+						if err != nil {
+							return err
+						}
+						pp.Println("addID", addID)
+
+						unk, err := assetDataReader.ReadInt(isLittleEndian)
+						if err != nil {
+							return err
+						}
+						pp.Println("unk", unk)
+					}
+				}
+
+				if format >= 6 {
+					numRefs, err := assetDataReader.ReadUint(isLittleEndian)
+					if err != nil {
+						return err
+					}
+
+					for i := 0; i < int(numRefs); i++ {
+
+					}
+				}
+
+				_, err = assetDataReader.ReadStringNull(256)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			panic(ErrNotImplemented)
+		}
+
+		filePath := path.Join(dir, node.Name)
+		err := ioutil.WriteFile(filePath, data, 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
