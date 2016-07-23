@@ -343,81 +343,11 @@ func (b *AssetBundle) ExportAssets(dir string) error {
 				pp.Println("numObjects", numObjects)
 
 				for i := 0; i < int(numObjects); i++ {
-					if format >= 14 {
-						err = assetDataReader.Align()
-						if err != nil {
-							return err
-						}
-					}
-					obj := ObjectInfo{}
-
-					var pathID int64
-					if isLongObjectIDs {
-						pathID, err = assetDataReader.ReadLong(isLittleEndian)
-						if err != nil {
-							return err
-						}
-					} else {
-						if format >= 14 {
-							pathID, err = assetDataReader.ReadLong(isLittleEndian)
-							if err != nil {
-								return err
-							}
-						} else {
-							pathID32, err := assetDataReader.ReadInt(isLittleEndian)
-							if err != nil {
-								return err
-							}
-							pathID = int64(pathID32)
-						}
-					}
-					obj.PathID = pathID
-
-					objDataOffset, err := assetDataReader.ReadUint(isLittleEndian)
+					obj, err := ParseObjectInfo(assetDataReader, format, isLongObjectIDs, isLittleEndian)
 					if err != nil {
 						return err
 					}
-					obj.DataOffset = objDataOffset
-
-					objSize, err := assetDataReader.ReadUint(isLittleEndian)
-					if err != nil {
-						return err
-					}
-					obj.Size = objSize
-
-					objTypeID, err := assetDataReader.ReadInt(isLittleEndian)
-					if err != nil {
-						return err
-					}
-					obj.TypeID = objTypeID
-
-					objClassID, err := assetDataReader.ReadShort(isLittleEndian)
-					if err != nil {
-						return err
-					}
-					obj.ClassID = ClassID(objClassID)
-
-					if format <= 10 {
-						_, err = assetDataReader.ReadShort(isLittleEndian)
-						if err != nil {
-							return err
-						}
-					} else if format >= 11 {
-						_, err = assetDataReader.ReadShort(isLittleEndian)
-						if err != nil {
-							return err
-						}
-						if format >= 15 {
-							_, err = assetDataReader.ReadChar(isLittleEndian)
-							if err != nil {
-								return err
-							}
-						}
-					}
-
-					// obj = ObjectInfo(self)
-					// obj.load(buf)
-					// self.register_object(obj)
+					// TODO: self.register_object(obj)
 				}
 
 				if format >= 11 {
@@ -455,7 +385,10 @@ func (b *AssetBundle) ExportAssets(dir string) error {
 					}
 
 					for i := 0; i < int(numRefs); i++ {
-
+						assetRef, err := ParseAssetRef(assetDataReader, format, isLittleEndian)
+						if err != nil {
+							return err
+						}
 					}
 				}
 
