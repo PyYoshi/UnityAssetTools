@@ -40,7 +40,7 @@ const (
 	CompressionTypeLZHAM
 )
 
-type AssetBundle struct {
+type Bundle struct {
 	Binary          []byte
 	Signature       string
 	FormatVersion   int32
@@ -72,11 +72,11 @@ type FSNode struct {
 	Name   string
 }
 
-func parseBundle533(dataReader *DataReader, assetBundle *AssetBundle) error {
+func parseBundle533(dataReader *DataReader, assetBundle *Bundle) error {
 	panic(ErrNotImplemented)
 }
 
-func parseBundle534(dataReader *DataReader, assetBundle *AssetBundle) error {
+func parseBundle534(dataReader *DataReader, assetBundle *Bundle) error {
 	assetBundle.NodeStartAt = assetBundle.FileSize - int64(dataReader.Len())
 
 	var compDataReader *DataReader
@@ -176,9 +176,9 @@ func parseBundle534(dataReader *DataReader, assetBundle *AssetBundle) error {
 	return nil
 }
 
-// ParseBundle AssetBundleをパース
-func ParseBundle(path string) (*AssetBundle, error) {
-	assetBundle := AssetBundle{}
+// ParseBundle Bundleをパース
+func ParseBundle(path string) (*Bundle, error) {
+	assetBundle := Bundle{}
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -262,7 +262,7 @@ func ParseBundle(path string) (*AssetBundle, error) {
 	panic(ErrNotImplemented)
 }
 
-func (b *AssetBundle) ExportAssets(dir string) error {
+func (b *Bundle) ExportAssets(dir string) error {
 	nodePos := int64(b.NodeStartAt)
 
 	for _, node := range b.Nodes {
@@ -321,6 +321,7 @@ func (b *AssetBundle) ExportAssets(dir string) error {
 				if err != nil {
 					return err
 				}
+				pp.Println("TypeMetadata", typeMetadata)
 
 				isLongObjectIDs := false
 				if format >= 7 && format <= 13 {
@@ -347,6 +348,7 @@ func (b *AssetBundle) ExportAssets(dir string) error {
 					if err != nil {
 						return err
 					}
+					pp.Println("ObjectInfo", obj)
 					// TODO: self.register_object(obj)
 				}
 
@@ -389,6 +391,7 @@ func (b *AssetBundle) ExportAssets(dir string) error {
 						if err != nil {
 							return err
 						}
+						pp.Println("AssetRef", assetRef)
 					}
 				}
 

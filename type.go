@@ -157,7 +157,7 @@ func parseTypeTree1012(dataReader *DataReader, typeTree *TypeTree, isLittleEndia
 		if typeTreeDepth == 0 {
 			typeTreeCurr = *typeTree
 		} else {
-			numParents := len(parents)
+			// numParents := len(parents)
 			for {
 				if len(parents) > int(typeTreeDepth) {
 					break
