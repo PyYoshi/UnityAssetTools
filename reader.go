@@ -181,7 +181,7 @@ func (data *DataReader) Align() error {
 	oldPos := size - data.buffer.Len()
 	newPos := (oldPos + 3) & -4
 	if newPos > oldPos {
-		_, err := data.buffer.Seek(int64(newPos), os.SEEK_CUR)
+		_, err := data.buffer.Seek(int64(newPos-oldPos), os.SEEK_CUR)
 		if err != nil {
 			return err
 		}
