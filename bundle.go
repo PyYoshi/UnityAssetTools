@@ -265,13 +265,21 @@ func ParseBundle(path string) (*Bundle, error) {
 func (b *Bundle) ExportAssets(dir string) error {
 	nodePos := int64(b.NodeStartAt)
 
+	pp.Println("b.Nodes", b.Nodes)
+
 	for _, node := range b.Nodes {
 		startAt := nodePos + node.Offset
 		endAt := startAt + node.Size
 		data := b.Binary[startAt:endAt]
 
+		filePath := path.Join(dir, node.Name)
+		err := ioutil.WriteFile(filePath, data, 0644)
+		if err != nil {
+			return err
+		}
+
 		if b.Signature == SignatureUnityFS {
-			if !strings.HasSuffix(".resource", node.Name) {
+			if !strings.HasSuffix(node.Name, ".resource") {
 				assetDataReader, err := NewDataReader(data)
 				if err != nil {
 					return err
@@ -353,8 +361,6 @@ func (b *Bundle) ExportAssets(dir string) error {
 					// TODO: self.register_object(obj)
 				}
 
-				// panic("")
-
 				if format >= 11 {
 					numAdds, err := assetDataReader.ReadUint(isLittleEndian)
 					if err != nil {
@@ -390,6 +396,8 @@ func (b *Bundle) ExportAssets(dir string) error {
 						return err
 					}
 
+					pp.Println("numRefs", numRefs)
+
 					for i := 0; i < int(numRefs); i++ {
 						assetRef, err := ParseAssetRef(assetDataReader, format, isLittleEndian)
 						if err != nil {
@@ -399,19 +407,15 @@ func (b *Bundle) ExportAssets(dir string) error {
 					}
 				}
 
-				_, err = assetDataReader.ReadStringNull(256)
+				unk_string, err := assetDataReader.ReadStringNull(256)
 				if err != nil {
 					return err
 				}
+				pp.Println("unk_string", unk_string)
 			}
+
 		} else {
 			panic(ErrNotImplemented)
-		}
-
-		filePath := path.Join(dir, node.Name)
-		err := ioutil.WriteFile(filePath, data, 0644)
-		if err != nil {
-			return err
 		}
 	}
 	return nil
