@@ -51,11 +51,13 @@ func ParseTypeMetadata(dataReader *DataReader, format uint32, isLittleEndian boo
 		if typeMetadataHasTypeTreesChar > 0 {
 			typeMetadataHasTypeTrees = true
 		}
+		// pp.Println("typeMetadataHasTypeTrees", typeMetadataHasTypeTrees)
 
 		typeMetadataNumTypes, err := dataReader.ReadInt(isLittleEndian)
 		if err != nil {
 			return nil, err
 		}
+		// pp.Println("typeMetadataNumTypes", typeMetadataNumTypes)
 
 		typeMetadataHashes := []TypeMetadataHash{}
 		typeMetadataTypeTrees := []TypeTree{}
@@ -64,6 +66,7 @@ func ParseTypeMetadata(dataReader *DataReader, format uint32, isLittleEndian boo
 			if err != nil {
 				return nil, err
 			}
+			// pp.Println("typeMetadataClassID", typeMetadataClassID)
 
 			var typeMetadataHash []byte
 			if typeMetadataClassID < 0 {
@@ -89,25 +92,27 @@ func ParseTypeMetadata(dataReader *DataReader, format uint32, isLittleEndian boo
 		}
 		typeMetadata.Hashes = typeMetadataHashes
 		typeMetadata.TypeTrees = typeMetadataTypeTrees
+		// pp.Println("typeMetadataHashes", typeMetadataHashes)
+		// pp.Println("typeMetadataTypeTrees", typeMetadataTypeTrees)
 	} else {
-		typeMetadataNumFields, err := dataReader.ReadInt(isLittleEndian)
-		if err != nil {
-			return nil, err
-		}
+		// typeMetadataNumFields, err := dataReader.ReadInt(isLittleEndian)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		typeMetadataTypeTrees := []TypeTree{}
-		for i := 0; i < int(typeMetadataNumFields); i++ {
-			typeMetadataClassID, err := dataReader.ReadInt(isLittleEndian)
-			if err != nil {
-				return nil, err
-			}
-			typeTree, err := ParseTypeTree(dataReader, format, isLittleEndian, ClassID(typeMetadataClassID))
-			if err != nil {
-				return nil, err
-			}
-			typeMetadataTypeTrees = append(typeMetadataTypeTrees, *typeTree)
-		}
-		typeMetadata.TypeTrees = typeMetadataTypeTrees
+		// typeMetadataTypeTrees := []TypeTree{}
+		// for i := 0; i < int(typeMetadataNumFields); i++ {
+		// 	typeMetadataClassID, err := dataReader.ReadInt(isLittleEndian)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	typeTree, err := ParseTypeTree(dataReader, format, isLittleEndian, ClassID(typeMetadataClassID))
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	typeMetadataTypeTrees = append(typeMetadataTypeTrees, *typeTree)
+		// }
+		// typeMetadata.TypeTrees = typeMetadataTypeTrees
 	}
 	return &typeMetadata, nil
 }
@@ -117,25 +122,31 @@ func parseTypeTree1012(dataReader *DataReader, typeTree *TypeTree, isLittleEndia
 	if err != nil {
 		return err
 	}
+	// pp.Println("typeTreeNumNodes", typeTreeNumNodes)
 
 	typeTreeBufferBytes, err := dataReader.ReadUint(isLittleEndian)
 	if err != nil {
 		return err
 	}
 	typeTree.BufferBytes = typeTreeBufferBytes
+	// pp.Println("typeTreeBufferBytes", typeTreeBufferBytes)
 
 	typeTreeNodeData, err := dataReader.ReadBytes(int(24*typeTreeNumNodes), isLittleEndian)
 	if err != nil {
 		return err
 	}
+	// pp.Println("typeTreeNodeData", typeTreeNodeData)
+	// pp.Println("typeTreeNodeData length", len(typeTreeNodeData))
 
 	typeTreeData, err := dataReader.ReadBytes(int(typeTree.BufferBytes), isLittleEndian)
 	if err != nil {
 		return err
 	}
 	typeTree.Data = typeTreeData
+	// pp.Println("typeTreeData", string(typeTreeData))
 
-	parents := []TypeTree{*typeTree}
+	// parents := []TypeTree{*typeTree}
+	// return nil
 
 	typeTreeDataReader, err := NewDataReader(typeTreeNodeData)
 	if err != nil {
@@ -143,32 +154,34 @@ func parseTypeTree1012(dataReader *DataReader, typeTree *TypeTree, isLittleEndia
 	}
 
 	for i := uint32(0); i < typeTreeNumNodes; i++ {
-		typeTreeVersion, err := typeTreeDataReader.ReadShort(false)
+		typeTreeVersion, err := typeTreeDataReader.ReadShort(isLittleEndian)
 		if err != nil {
 			return err
 		}
+		// pp.Println("typeTreeVersion", typeTreeVersion)
 
-		typeTreeDepth, err := typeTreeDataReader.ReadChar(false)
+		typeTreeDepth, err := typeTreeDataReader.ReadChar(isLittleEndian)
 		if err != nil {
 			return err
 		}
+		// pp.Println("typeTreeDepth", typeTreeDepth)
 
 		var typeTreeCurr TypeTree
 		if typeTreeDepth == 0 {
 			typeTreeCurr = *typeTree
 		} else {
 			// numParents := len(parents)
-			for {
-				if len(parents) > int(typeTreeDepth) {
-					break
-				}
-				parents = parents[:len(parents)-1]
-				// parents.append(curr)
-			}
+			// for {
+			// 	if len(parents) > int(typeTreeDepth) {
+			// 		break
+			// 	}
+			// 	// parents = parents[:len(parents)-1]
+			// 	// parents.append(curr)
+			// }
 		}
 
 		typeTreeCurr.Version = int32(typeTreeVersion)
-		typeTreeCurrIsArrayBytes, err := typeTreeDataReader.ReadChar(false)
+		typeTreeCurrIsArrayBytes, err := typeTreeDataReader.ReadChar(isLittleEndian)
 		if err != nil {
 			return err
 		}
@@ -177,36 +190,48 @@ func parseTypeTree1012(dataReader *DataReader, typeTree *TypeTree, isLittleEndia
 			typeTreeCurrIsArray = true
 		}
 		typeTreeCurr.IsArray = typeTreeCurrIsArray
+		// pp.Println("typeTreeCurrIsArray", typeTreeCurrIsArray)
 
-		typeTreeCurrTypeOffset, err := typeTreeDataReader.ReadInt(false)
+		typeTreeCurrTypeOffset, err := typeTreeDataReader.ReadInt(isLittleEndian)
 		if err != nil {
 			return err
+		}
+		if typeTreeCurrTypeOffset < 0 {
+			typeTreeCurrTypeOffset = typeTreeCurrTypeOffset & 0x7fffffff
 		}
 		typeTreeCurr.TypeOffset = typeTreeCurrTypeOffset
+		// pp.Println("typeTreeCurrTypeOffset", typeTreeCurrTypeOffset)
 
-		typeTreeCurrNameOffset, err := typeTreeDataReader.ReadInt(false)
+		typeTreeCurrNameOffset, err := typeTreeDataReader.ReadInt(isLittleEndian)
 		if err != nil {
 			return err
 		}
+		if typeTreeCurrNameOffset < 0 {
+			typeTreeCurrNameOffset = typeTreeCurrNameOffset & 0x7fffffff
+		}
 		typeTreeCurr.NameOffset = typeTreeCurrNameOffset
+		// pp.Println("typeTreeCurrNameOffset", typeTreeCurrNameOffset)
 
-		typeTreeCurrSize, err := typeTreeDataReader.ReadInt(false)
+		typeTreeCurrSize, err := typeTreeDataReader.ReadInt(isLittleEndian)
 		if err != nil {
 			return err
 		}
 		typeTreeCurr.Size = typeTreeCurrSize
+		// pp.Println("typeTreeCurrSize", typeTreeCurrSize)
 
-		typeTreeCurrIndex, err := typeTreeDataReader.ReadUint(false)
+		typeTreeCurrIndex, err := typeTreeDataReader.ReadUint(isLittleEndian)
 		if err != nil {
 			return err
 		}
 		typeTreeCurr.Index = int64(typeTreeCurrIndex)
+		// pp.Println("typeTreeCurrIndex", typeTreeCurrIndex)
 
-		typeTreeCurrFlags, err := typeTreeDataReader.ReadInt(false)
+		typeTreeCurrFlags, err := typeTreeDataReader.ReadInt(isLittleEndian)
 		if err != nil {
 			return err
 		}
 		typeTreeCurr.Flags = typeTreeCurrFlags
+		// pp.Println("typeTreeCurrFlags", typeTreeCurrFlags)
 
 		typeTree.Children = append(typeTree.Children, typeTreeCurr)
 	}

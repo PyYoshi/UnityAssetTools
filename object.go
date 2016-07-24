@@ -9,6 +9,8 @@ type ObjectInfo struct {
 }
 
 func ParseObjectInfo(dataReader *DataReader, format uint32, isLongObjectIDs, isLittleEndian bool) (*ObjectInfo, error) {
+	// pp.Println("format", format)
+
 	var err error
 	if format >= 14 {
 		err = dataReader.Align()
@@ -39,30 +41,35 @@ func ParseObjectInfo(dataReader *DataReader, format uint32, isLongObjectIDs, isL
 		}
 	}
 	obj.PathID = pathID
+	// pp.Println("pathID", pathID)
 
 	objDataOffset, err := dataReader.ReadUint(isLittleEndian)
 	if err != nil {
 		return nil, err
 	}
 	obj.DataOffset = objDataOffset
+	// pp.Println("objDataOffset", objDataOffset)
 
 	objSize, err := dataReader.ReadUint(isLittleEndian)
 	if err != nil {
 		return nil, err
 	}
 	obj.Size = objSize
+	// pp.Println("objSize", objSize)
 
 	objTypeID, err := dataReader.ReadInt(isLittleEndian)
 	if err != nil {
 		return nil, err
 	}
 	obj.TypeID = objTypeID
+	// pp.Println("objTypeID", objTypeID)
 
 	objClassID, err := dataReader.ReadShort(isLittleEndian)
 	if err != nil {
 		return nil, err
 	}
 	obj.ClassID = ClassID(objClassID)
+	// pp.Println("ClassID", ClassID(objClassID))
 
 	if format <= 10 {
 		_, err = dataReader.ReadShort(isLittleEndian)

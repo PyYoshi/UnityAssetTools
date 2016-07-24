@@ -317,11 +317,12 @@ func (b *Bundle) ExportAssets(dir string) error {
 
 				// self.tree = TypeMetadata(self)
 				// self.tree.load(buf)
-				typeMetadata, err := ParseTypeMetadata(assetDataReader, format, isLittleEndian)
+				// typeMetadata, err := ParseTypeMetadata(assetDataReader, format, isLittleEndian)
+				_, err = ParseTypeMetadata(assetDataReader, format, isLittleEndian)
 				if err != nil {
 					return err
 				}
-				pp.Println("TypeMetadata", typeMetadata)
+				// pp.Println("TypeMetadata", typeMetadata)
 
 				isLongObjectIDs := false
 				if format >= 7 && format <= 13 {
@@ -352,11 +353,14 @@ func (b *Bundle) ExportAssets(dir string) error {
 					// TODO: self.register_object(obj)
 				}
 
+				// panic("")
+
 				if format >= 11 {
 					numAdds, err := assetDataReader.ReadUint(isLittleEndian)
 					if err != nil {
 						return err
 					}
+					pp.Println("numAdds", numAdds)
 
 					for i := 0; i < int(numAdds); i++ {
 						if format >= 14 {
